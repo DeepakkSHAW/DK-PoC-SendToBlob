@@ -1,0 +1,4 @@
+@base=http://localhost:7255/
+
+### start AS User Sync
+POST {{base}}api/FnSendToBlob
