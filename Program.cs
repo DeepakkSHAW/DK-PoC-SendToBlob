@@ -12,6 +12,14 @@ builder.ConfigureFunctionsWebApplication();
 //     .AddApplicationInsightsTelemetryWorkerService()
 //     .ConfigureFunctionsApplicationInsights();
 
-builder.Services.AddSingleton(factory => new BlobServiceClient(Environment.GetEnvironmentVariable("AzureWebJobsStorage")));
+var storageConn = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
+
+if (string.IsNullOrEmpty(storageConn) )
+{ 
+    throw new InvalidOperationException(
+        "Environment variables missing configuration. Please specify them to continue...");
+}
+
+builder.Services.AddSingleton(factory => new BlobServiceClient(storageConn));
 
 builder.Build().Run();

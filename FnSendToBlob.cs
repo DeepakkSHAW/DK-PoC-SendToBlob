@@ -1,13 +1,9 @@
-using System.IO;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Azure;
 using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using System.Text;
 
 namespace DK_PoC_SendToBlob
 {
@@ -38,8 +34,17 @@ namespace DK_PoC_SendToBlob
             {
                 string containerName = Environment.GetEnvironmentVariable("BLOB-ContainerName");
                 string messageToWriteToFile = "{ \"name\": \"deepak\", \"id\": 3}";
-                var contBlobs = _blobServiceClient.GetBlobContainerClient(containerName);
-                await contBlobs.UploadBlobAsync($"DK-Data_{DateTime.Now.ToString("dd-MMM-yy_hh-mm-ss-ffff")}.txt", GetStream(messageToWriteToFile));
+                var ct = new Azure.Storage.Blobs.Models.BlobHttpHeaders { ContentType = "application/json" };
+
+                //* initiate Blob Container Blob Client*//
+                var containerBlobsClient = _blobServiceClient.GetBlobContainerClient(containerName);
+                await containerBlobsClient.CreateIfNotExistsAsync();
+                //await containerBlobsClient.UploadBlobAsync($"DK-Data_{DateTime.Now.ToString("dd-MMM-yy_hh-mm-ss-ffff")}.txt", GetStream(messageToWriteToFile));
+
+                //* initiate Blob Client*//
+                BlobClient blobClient = containerBlobsClient.GetBlobClient($"dk-blob_{DateTime.Now.ToString("ddMMyy_hhmmssfff")}.json");
+                using (MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(messageToWriteToFile)))
+                    await blobClient.UploadAsync(ms, ct); //* Set Blob Content type *//
 
                 var response = $"==Save message to Blob, successfully completed==";
                 _logger.LogWarning(response);
